@@ -1,0 +1,132 @@
+编写React组件时要考虑的基本准则是单一职责原则。单一职责原则(缩写：SRP)要求组件有一个且只有一个变更的原因。
+
+组件的职责可以是呈现列表，或者显示日期选择器，或者发出 HTTP 请求，或者绘制图表，或者延迟加载图像等。你的组件应该只选择一个职责并实现它。当你修改组件实现其职责的方式（例如，更改渲染的列表的数量限制），它有一个更改的原因。
+为什么只有一个理由可以改变很重要？因为这样组件的修改隔离并且受控。单一职责原则限制了组件的大小，使其集中在一件事情上。集中在一件事情上的组件便于编码、修改、重用和测试。
+
+举例：
+singleResponsibility是单一职责区分的组件，按照添加、展示、不变分为三个组件，可以看到，NotChange组件只有在父组件更新的时候才会连带更新，还可以使用componentShouldUpdate返回false使得它不更新，这样大大减少了更新次数。
+notSingleResponsibility不是单一职责的，修改、添加、不变放在了一起，这样每次输入框变化的时候，不变的区域都会被重新渲染，消耗了很大的资源。
+
+1.1 多重职责陷阱
+当一个组件有多个职责时，就会发生一个常见的问题。乍一看，这种做法似乎是无害的，并且工作量较少：
+
+你立即开始编码：无需识别职责并相应地规划结构
+一个大的组件可以做到这一切：不需要为每个职责创建组成部分
+无拆分-无开销：无需为拆分组件之间的通信创建 props 和 callbacks
+
+这种幼稚的结构在开始时很容易编码。但是随着应用程序的增加和变得复杂，在以后的修改中会出现困难。同时实现多个职责的组件有许多更改的原因。现在出现的主要问题是：出于某种原因更改组件会无意中影响同一组件实现的其它职责。
+
+不要关闭电灯开关，因为它同样作用于电梯。
+
+这种设计很脆弱。意外的副作用是很难预测和控制的。
+例如，<ChartAndForm> 同时有两个职责，绘制图表，并处理为该图表提供数据的表单。<ChartandForm> 就会有两个更改原因：绘制图表和处理表单。
+当你更改表单字段（例如，将 <input> 修改为 <select> 时，你无意中中断图表的渲染。此外，图表实现是不可重用的，因为它与表单细节耦合在一起。
+解决多重责任问题需要将 <ChartAndForm> 分割为两个组件：<Chart> 和<Form>。每个组件只有一个职责：绘制图表或处理表单。组件之间的通信是通过props 实现。
+多重责任问题的最坏情况是所谓的上帝组件（上帝对象的类比）。上帝组件倾向于了解并做所有事情。你可能会看到它名为 <Application>、<Manager> 、<Bigcontainer> 或 <Page>，代码超过500行。
+在组合的帮助下使其符合SRP，从而分解上帝组件。(组合（composition）是一种通过将各组件联合在一起以创建更大组件的方式。组合是 React 的核心。)
+
+1.2 案例研究：使组件只有一个职责
+设想一个组件向一个专门的服务器发出 HTTP 请求，以获取当前天气。成功获取数据时，该组件使用响应来展示天气信息：
+import axios from 'axios';
+// 问题: 一个组件有多个职责
+class Weather extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { temperature: 'N/A', windSpeed: 'N/A' };
+    }
+
+    render() {
+        const { temperature, windSpeed } = this.state;
+        return (
+            <div className="weather">
+                <div>Temperature: {temperature}°C</div>
+                <div>Wind: {windSpeed}km/h</div>
+            </div>
+        );
+    }
+
+    componentDidMount() {
+        axios.get('http://weather.com/api').then(function (response) {
+            const { current } = response.data;
+            this.setState({
+                temperature: current.temperature,
+                windSpeed: current.windSpeed
+            })
+        });
+    }
+}
+复制代码在处理类似的情况时，问问自己：是否必须将组件拆分为更小的组件？通过确定组件可能会如何根据其职责进行更改，可以最好地回答这个问题。
+这个天气组件有两个改变原因：
+
+
+componentDidMount() 中的 fetch 逻辑：服务器URL或响应格式可能会改变。
+
+
+render() 中的天气展示：组件显示天气的方式可以多次更改。
+
+
+解决方案是将 <Weather> 分为两个组件：每个组件只有一个职责。命名为 <WeatherFetch> 和 <WeatherInfo>。
+<WeatherFetch> 组件负责获取天气、提取响应数据并将其保存到 state 中。它改变原因只有一个就是获取数据逻辑改变。
+import axios from 'axios';
+// 解决措施: 组件只有一个职责就是请求数据
+class WeatherFetch extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { temperature: 'N/A', windSpeed: 'N/A' };
+    }
+
+    render() {
+        const { temperature, windSpeed } = this.state;
+        return (
+            <WeatherInfo temperature={temperature} windSpeed={windSpeed} />
+        );
+    }
+
+    componentDidMount() {
+        axios.get('http://weather.com/api').then(function (response) {
+            const { current } = response.data;
+            this.setState({
+                temperature: current.temperature,
+                windSpeed: current.windSpeed
+            });
+        });
+    }
+}
+复制代码这种结构有什么好处？
+例如，你想要使用 async/await 语法来替代 promise 去服务器获取响应。更改原因：修改获取逻辑
+// 改变原因: 使用 async/await 语法
+class WeatherFetch extends Component {
+    // ..... //
+    async componentDidMount() {
+        const response = await axios.get('http://weather.com/api');
+        const { current } = response.data;
+        this.setState({
+            temperature: current.temperature,
+            windSpeed: current.windSpeed
+        });
+    }
+}
+复制代码因为 <WeatherFetch> 只有一个更改原因：修改 fetch 逻辑，所以对该组件的任何修改都是隔离的。使用 async/await 不会直接影响天气的显示。
+<WeatherFetch> 渲染 <WeatherInfo>。后者只负责显示天气，改变原因只可能是视觉显示改变。
+// 解决方案: 组件只有一个职责，就是显示天气
+function WeatherInfo({ temperature, windSpeed }) {
+    return (
+        <div className="weather">
+            <div>Temperature: {temperature}°C</div>
+            <div>Wind: {windSpeed} km/h</div>
+        </div>
+    );
+}
+复制代码让我们更改<WeatherInfo>，如不显示 “wind:0 km/h” 而是显示 “wind:calm”。这就是天气视觉显示发生变化的原因：
+// 改变原因: 无风时的显示
+function WeatherInfo({ temperature, windSpeed }) {
+    const windInfo = windSpeed === 0 ? 'calm' : `${windSpeed} km/h`;
+    return (
+        <div className="weather">
+            <div>Temperature: {temperature}°C</div>
+            <div>Wind: {windInfo}</div>
+        </div>
+    );
+}
+复制代码同样，对 <WeatherInfo> 的修改是隔离的，不会影响 <WeatherFetch> 组件。
+<WeatherFetch> 和 <WeatherInfo> 有各自的职责。一种组件的变化对另一种组件的影响很小。这就是单一职责原则的作用：修改隔离，对系统的其他组件产生影响很轻微并且可预测。

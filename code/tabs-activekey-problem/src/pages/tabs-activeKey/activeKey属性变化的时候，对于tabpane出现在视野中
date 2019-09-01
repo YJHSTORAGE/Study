@@ -1,0 +1,13 @@
+switchTabPane = ( e ) => {
+    this.setState({
+      activeKey:e
+    })
+  }
+  
+  handleTabClick = (e) => {
+    console.log(e)
+    this.setState({
+      activeKey:e
+    })
+  }
+  两种方法都可以实现,在ant 中，activekey属性是可以实现的，但是在igroot中却是不可以实现的

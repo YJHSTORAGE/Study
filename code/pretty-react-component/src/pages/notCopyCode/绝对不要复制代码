@@ -1,0 +1,51 @@
+相同代码不copy原则：
+举例：
+not copy：
+ handleChange =( e ) => {
+   let value = e.target.value
+   //可以有很多的操作，这里就用个字符串判断操作
+   
+   this.validationDate(value)
+ }
+
+ handleClick = () => {
+   let value="被点击了"
+   this.validationDate( value )
+   setTimeout( () => {
+     message.success('相同代码不copy')
+   },1000)
+ }
+ 
+ validationDate = ( value ) => {
+  value = value===""?'输入数据':value
+  this.setState({
+    message:value
+  })
+ }
+copy：
+ handleChange =( e ) => {
+   let value = e.target.value
+   //可以有很多的操作，这里就用个字符串判断操作
+   //the same
+   value = value===""?'输入数据':value
+   this.setState({
+     message:value
+   })
+ }
+
+ handleClick = () => {
+   let value="被点击了"
+   //the same
+   value = value===""?'输入数据':value
+   this.setState({
+     message:value
+   })
+   //the same end
+   setTimeout( () => {
+     message.success('相同代码不copy')
+   },1000)
+ }
+两端代码执行相同的功能，在效果和用户体验上，是完全一摸一样的，可以说，在代码不需要修改的时候是完全一样的，
+但是，当代码修改了呢？第一段代码只需要修改validationDate中代码一次，但是第二段代码需要修改handleChange、handleClick代码块两次，
+当重复的代码块变多了，代码体积变大，而且修改次数变多，不好维护。
+一个优秀的程序员，是不会运行自己的代码有任何他力所能及范围内的瑕疵的。
