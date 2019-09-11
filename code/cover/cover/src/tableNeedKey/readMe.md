@@ -1,0 +1,2 @@
+table组件的dataSource每一项是否可以没有key属性?
+不可以，一定要保留key属性
