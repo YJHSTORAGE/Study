@@ -6,9 +6,10 @@ import DataCover from './dataCover'
 import NewButton from './extendsMySelf'
 import BrotherContact from './brotherContact'
 import TableNeedKey from './tableNeedKey'
+import LocalStorage from './localStorage'
 import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<TableNeedKey />, document.getElementById('root'));
+ReactDOM.render(<LocalStorage />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
